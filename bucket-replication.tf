@@ -7,7 +7,7 @@
 ################################################################################
 
 resource "oci_objectstorage_replication_policy" "this" {
-  count = local.create && var.replication_policy != null ? 1 : 0
+  count = local.create_bucket && var.replication_policy != null ? 1 : 0
 
   namespace               = local.namespace
   bucket                  = oci_objectstorage_bucket.this[0].name

@@ -19,7 +19,7 @@ output "name" {
 
 output "namespace" {
   description = "The Object Storage namespace the bucket lives in"
-  value       = local.create ? local.namespace : null
+  value       = local.create_bucket ? local.namespace : null
 }
 
 output "etag" {
@@ -52,7 +52,7 @@ output "bucket_all_attributes" {
 ################################################################################
 
 output "lifecycle_policy_id" {
-  description = "The ID of the object lifecycle policy. Null when no lifecycle_rules are configured"
+  description = "The ID of the object lifecycle policy. Null when no lifecycle_rule are configured"
   value       = try(oci_objectstorage_object_lifecycle_policy.this[0].id, null)
 }
 
@@ -71,7 +71,7 @@ output "replication_status" {
 ################################################################################
 
 output "preauthenticated_request_uris" {
-  description = "Map of PAR name to its full access URI. Sensitive — each URI grants the configured access without further credentials"
+  description = "Map of PAR name to its full access URI. Sensitive - each URI grants the configured access without further credentials"
   value       = { for k, v in oci_objectstorage_preauthrequest.this : k => v.access_uri }
   sensitive   = true
 }

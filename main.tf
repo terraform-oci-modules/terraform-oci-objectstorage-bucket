@@ -1,5 +1,5 @@
 locals {
-  create = var.create
+  create_bucket = var.create_bucket
 
   # Object Storage namespace is required on every bucket/policy resource.
   # Auto-resolve it from the tenancy when the caller does not pass one.
@@ -22,14 +22,14 @@ data "oci_objectstorage_namespace" "this" {
 }
 
 ################################################################################
-# Guards — some OCI Object Storage argument combinations are rejected by the API
+# Guards - some OCI Object Storage argument combinations are rejected by the API
 # at apply time with cryptic 400 errors. Catch them at plan time instead so the
 # message is actionable.
 ################################################################################
 
 check "auto_tiering_ia_lifecycle_conflict" {
   assert {
-    condition     = !(var.auto_tiering == "InfrequentAccess" && anytrue([for r in var.lifecycle_rules : r.action == "INFREQUENT_ACCESS"]))
+    condition     = !(var.auto_tiering == "InfrequentAccess" && anytrue([for r in var.lifecycle_rule : r.action == "INFREQUENT_ACCESS"]))
     error_message = "When auto_tiering = \"InfrequentAccess\", lifecycle rules with action = \"INFREQUENT_ACCESS\" are rejected by the OCI API. Remove the INFREQUENT_ACCESS lifecycle rule."
   }
 }
@@ -46,7 +46,7 @@ check "retention_rules_versioning_conflict" {
 ################################################################################
 
 resource "oci_objectstorage_bucket" "this" {
-  count = local.create ? 1 : 0
+  count = local.create_bucket ? 1 : 0
 
   compartment_id = var.compartment_id
   namespace      = local.namespace
@@ -60,7 +60,7 @@ resource "oci_objectstorage_bucket" "this" {
   kms_key_id            = var.kms_key_id
   metadata              = var.metadata
 
-  # Inline retention rules — the OCI equivalent of S3 Object Lock (WORM).
+  # Inline retention rules - the OCI equivalent of S3 Object Lock (WORM).
   # duration is always required; the OCI API rejects requests without it.
   dynamic "retention_rules" {
     for_each = var.retention_rules

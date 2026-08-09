@@ -1,32 +1,25 @@
-# Feature Parity: OCI Object Storage Bucket vs AWS S3 Bucket
+# S3 to Object Storage feature parity
 
-Comparison between this module (`terraform-oci-modules/objectstorage-bucket/oci`) and the
-reference AWS module (`terraform-aws-modules/s3-bucket/aws`).
+Comparison against [`terraform-aws-s3-bucket`](https://github.com/terraform-aws-modules/terraform-aws-s3-bucket)
+v5.15.4. This module maps each S3 concept to its OCI Object Storage equivalent. It is
+not a 1:1 mapping: the two services differ substantially.
 
-The goal is not 1:1 mapping — OCI Object Storage and AWS S3 have fundamentally different
-primitives — but to make the interface feel familiar to users coming from the AWS module,
-while being idiomatic OCI.
-
-**Legend:**
-- ✅ Implemented
-- ⬜ Not yet implemented — OCI provider supports this; module doesn't expose it yet
-- N/A Not applicable to this cloud (architectural difference, not a gap)
-- OCI-only No AWS equivalent — intentional addition
-
----
+Status values used below: `mapped` where the concept carries over, `n/a` where no OCI
+equivalent exists, `OCI-only` for features with no AWS counterpart, and `backlog` for
+anything the OCI provider supports that this module does not expose yet.
 
 ## 1. Core / Control
 
 | Feature             | AWS             | OCI              | Status                      |
 | ------------------- | --------------- | ---------------- | --------------------------- |
-| Create toggle       | `create_bucket` | `create`         | ✅                           |
-| Resource name       | `bucket`        | `bucket`         | ✅                           |
-| Name prefix         | `bucket_prefix` | —                | N/A (OCI has no name-prefix concept) |
-| Compartment scoping | —               | `compartment_id` | OCI-only                    |
-| Namespace scoping   | —               | `namespace` (auto-resolved) | OCI-only         |
-| Region override     | `region`        | —                | N/A (provider-level in OCI) |
-| Force destroy       | `force_destroy` | —                | N/A (OCI refuses to delete a non-empty bucket — no force-empty flag) |
-| Expected bucket owner | `expected_bucket_owner` | —      | N/A                         |
+| Create toggle       | `create_bucket` | `create_bucket`  | mapped                           |
+| Resource name       | `bucket`        | `bucket`         | mapped                           |
+| Name prefix         | `bucket_prefix` | - | N/A (OCI has no name-prefix concept) |
+| Compartment scoping | - | `compartment_id` | OCI-only                    |
+| Namespace scoping   | - | `namespace` (auto-resolved) | OCI-only         |
+| Region override     | `region`        | - | N/A (provider-level in OCI) |
+| Force destroy       | `force_destroy` | - | N/A (OCI refuses to delete a non-empty bucket - no force-empty flag) |
+| Expected bucket owner | `expected_bucket_owner` | - | n/a                         |
 
 ---
 
@@ -34,12 +27,12 @@ while being idiomatic OCI.
 
 | Feature                     | AWS                                  | OCI                                          | Status |
 | --------------------------- | ------------------------------------ | -------------------------------------------- | ------ |
-| Public access block         | `attach_public_policy`, `block_public_acls`, `block_public_policy`, `ignore_public_acls`, `restrict_public_buckets` | `access_type = "NoPublicAccess"` (default) | ✅ (see note below) |
-| Public read of objects      | canned ACL `public-read`             | `access_type = "ObjectRead"`                 | ✅      |
-| Public read without listing | canned ACL `public-read` (custom)    | `access_type = "ObjectReadWithoutList"`      | ✅      |
-| Object ownership controls   | `aws_s3_bucket_ownership_controls`   | —                                            | N/A    |
-| Canned ACL                  | `acl`                                | —                                            | N/A    |
-| Granular ACL grants         | `grant`, `owner`                     | —                                            | N/A    |
+| Public access block         | `attach_public_policy`, `block_public_acls`, `block_public_policy`, `ignore_public_acls`, `restrict_public_buckets` | `access_type = "NoPublicAccess"` (default) | mapped (see note) |
+| Public read of objects      | canned ACL `public-read`             | `access_type = "ObjectRead"`                 | mapped      |
+| Public read without listing | canned ACL `public-read` (custom)    | `access_type = "ObjectReadWithoutList"`      | mapped      |
+| Object ownership controls   | `aws_s3_bucket_ownership_controls`   | - | n/a    |
+| Canned ACL                  | `acl`                                | - | n/a    |
+| Granular ACL grants         | `grant`, `owner`                     | - | n/a    |
 
 > **Why most ACL/PAB controls map to a single `access_type`**: OCI does not have S3-style ACLs.
 > All cross-tenant/anonymous access is governed by the bucket's `access_type` plus tenancy-level
@@ -52,8 +45,8 @@ while being idiomatic OCI.
 
 | Feature              | AWS                                   | OCI                  | Status |
 | -------------------- | ------------------------------------- | -------------------- | ------ |
-| Object versioning    | `versioning.status` (map)             | `versioning` (string) | ✅ (see note below) |
-| MFA delete           | `versioning.mfa_delete` / `mfa`       | —                    | N/A (OCI has no MFA delete concept) |
+| Object versioning    | `versioning.status` (map)             | `versioning` (string) | mapped (see note) |
+| MFA delete           | `versioning.mfa_delete` / `mfa`       | - | N/A (OCI has no MFA delete concept) |
 
 > **Shape difference**: AWS's `versioning` variable is a map with `status` and `mfa_delete` keys.
 > OCI exposes a single string ("Enabled" / "Disabled" / "Suspended"). The OCI module uses the
@@ -65,12 +58,12 @@ while being idiomatic OCI.
 
 | Feature                       | AWS                                                       | OCI                | Status                                            |
 | ----------------------------- | --------------------------------------------------------- | ------------------ | ------------------------------------------------- |
-| Default encryption (Oracle/AWS-managed) | Always on (SSE-S3 / aws:kms with AWS-managed key) | Always on (Oracle-managed) | ✅ (always on, no opt-in) |
-| Customer KMS key              | `server_side_encryption_configuration.kms_master_key_id`  | `kms_key_id`       | ✅                                                 |
-| Bucket key                    | `bucket_key_enabled`                                      | —                  | N/A (OCI does not expose a per-bucket key indirection) |
-| Algorithm selection           | `sse_algorithm` (AES256 / aws:kms)                        | —                  | N/A (OCI selects algorithm based on key choice)   |
-| Blocked encryption types      | `blocked_encryption_types`                                | —                  | N/A                                               |
-| SSE-C (customer-provided key) | inline at PUT object                                      | —                  | N/A (not exposed in Terraform provider)           |
+| Default encryption (Oracle/AWS-managed) | Always on (SSE-S3 / aws:kms with AWS-managed key) | Always on (Oracle-managed) | mapped (always on, no opt-in) |
+| Customer KMS key              | `server_side_encryption_configuration.kms_master_key_id`  | `kms_key_id`       | mapped                                                 |
+| Bucket key                    | `bucket_key_enabled`                                      | - | N/A (OCI does not expose a per-bucket key indirection) |
+| Algorithm selection           | `sse_algorithm` (AES256 / aws:kms)                        | - | N/A (OCI selects algorithm based on key choice)   |
+| Blocked encryption types      | `blocked_encryption_types`                                | - | n/a                                               |
+| SSE-C (customer-provided key) | inline at PUT object                                      | - | N/A (not exposed in Terraform provider)           |
 
 ---
 
@@ -78,12 +71,12 @@ while being idiomatic OCI.
 
 | Feature              | AWS                                              | OCI                                          | Status |
 | -------------------- | ------------------------------------------------ | -------------------------------------------- | ------ |
-| Default storage class | (inferred from lifecycle / object PUT)          | `storage_tier` ("Standard" / "Archive")      | OCI-only ✅ (immutable — changing forces replacement) |
-| Intelligent tiering  | `intelligent_tiering` (configurations + filters) | `auto_tiering` ("Disabled" / "InfrequentAccess") | ✅ (see note below) |
-| Per-config filters / tiers | full filter, archive/deep-archive tiers     | —                                            | N/A (OCI auto-tiering is bucket-wide, 30-day threshold) |
+| Default storage class | (inferred from lifecycle / object PUT)          | `storage_tier` ("Standard" / "Archive")      | OCI-only (immutable - changing forces replacement) |
+| Intelligent tiering  | `intelligent_tiering` (configurations + filters) | `auto_tiering` ("Disabled" / "InfrequentAccess") | mapped (see note) |
+| Per-config filters / tiers | full filter, archive/deep-archive tiers     | - | N/A (OCI auto-tiering is bucket-wide, 30-day threshold) |
 
 > **Auto-tiering granularity**: AWS Intelligent-Tiering supports multiple per-prefix configurations
-> with custom archive thresholds. OCI auto-tiering is a single bucket-wide switch — objects unused
+> with custom archive thresholds. OCI auto-tiering is a single bucket-wide switch - objects unused
 > for 30+ days move to the Infrequent Access tier.
 
 ---
@@ -92,23 +85,23 @@ while being idiomatic OCI.
 
 | Feature                | AWS                                            | OCI                                                  | Status |
 | ---------------------- | ---------------------------------------------- | ---------------------------------------------------- | ------ |
-| Lifecycle rules        | `lifecycle_rule` (list)                        | `lifecycle_rules` (list) → `oci_objectstorage_object_lifecycle_policy` | ✅ |
-| Expiration / transition by age | `expiration.days`, `transition.days`   | `time_amount` + `time_unit` ("DAYS" / "YEARS")       | ✅      |
-| Transition to archive / IA | `transition.storage_class`                 | `action` ("ARCHIVE" / "INFREQUENT_ACCESS")           | ✅      |
-| Delete                 | `expiration` (no transition target)            | `action = "DELETE"`                                  | ✅      |
-| Abort incomplete multipart uploads | `abort_incomplete_multipart_upload_days` | `action = "ABORT"`                          | ✅      |
-| Previous-version handling | `noncurrent_version_*`                      | `target = "previous-object-versions"` (requires versioning enabled) | ✅ (see note below) |
-| Prefix filter          | `filter.prefix`                                | `object_name_filter.inclusion_prefixes`              | ✅      |
-| Pattern (glob) include / exclude | filter.tag / object_size_*           | `object_name_filter.inclusion_patterns` / `exclusion_patterns` | ✅ (different shape — glob patterns instead of tags / sizes) |
-| Tag-based filtering    | `filter.tag` / `filter.and.tags`               | —                                                    | N/A (OCI lifecycle filters by name only) |
+| Lifecycle rules        | `lifecycle_rule` (list)                        | `lifecycle_rule` (list) → `oci_objectstorage_object_lifecycle_policy` | mapped |
+| Expiration / transition by age | `expiration.days`, `transition.days`   | `time_amount` + `time_unit` ("DAYS" / "YEARS")       | mapped      |
+| Transition to archive / IA | `transition.storage_class`                 | `action` ("ARCHIVE" / "INFREQUENT_ACCESS")           | mapped      |
+| Delete                 | `expiration` (no transition target)            | `action = "DELETE"`                                  | mapped      |
+| Abort incomplete multipart uploads | `abort_incomplete_multipart_upload_days` | `action = "ABORT"`                          | mapped      |
+| Previous-version handling | `noncurrent_version_*`                      | `target = "previous-object-versions"` (requires versioning enabled) | mapped (see note) |
+| Prefix filter          | `filter.prefix`                                | `object_name_filter.inclusion_prefixes`              | mapped      |
+| Pattern (glob) include / exclude | filter.tag / object_size_*           | `object_name_filter.inclusion_patterns` / `exclusion_patterns` | mapped (different shape - glob patterns instead of tags / sizes) |
+| Tag-based filtering    | `filter.tag` / `filter.and.tags`               | - | N/A (OCI lifecycle filters by name only) |
 
 > **Previous-version target**: OCI enforces that `target = "previous-object-versions"` requires
 > versioning to be enabled on the bucket at the API level. Pair this rule with `versioning = "Enabled"`.
 > See `examples/lifecycle` for the full demonstration including this rule.
-| Object size filter     | `filter.object_size_greater_than` / `_less_than` | —                                                  | N/A    |
-| Expired-delete-marker  | `expiration.expired_object_delete_marker`      | —                                                    | N/A    |
-| Date-based trigger     | `expiration.date`, `transition.date`           | —                                                    | N/A (OCI uses age in DAYS / YEARS only) |
-| Default minimum object size | `transition_default_minimum_object_size`  | —                                                    | N/A    |
+| Object size filter     | `filter.object_size_greater_than` / `_less_than` | - | n/a    |
+| Expired-delete-marker  | `expiration.expired_object_delete_marker`      | - | n/a    |
+| Date-based trigger     | `expiration.date`, `transition.date`           | - | N/A (OCI uses age in DAYS / YEARS only) |
+| Default minimum object size | `transition_default_minimum_object_size`  | - | n/a    |
 
 ---
 
@@ -116,17 +109,17 @@ while being idiomatic OCI.
 
 | Feature                    | AWS                                  | OCI                                       | Status                       |
 | -------------------------- | ------------------------------------ | ----------------------------------------- | ---------------------------- |
-| Object Lock (WORM)         | `object_lock_enabled` + `object_lock_configuration` | `retention_rules` (inline)         | ✅                            |
-| Retention duration         | `default_retention.days` / `.years`  | `duration.time_amount` + `time_unit`      | ✅                            |
-| Retention mode             | `default_retention.mode` (GOVERNANCE / COMPLIANCE) | —                           | N/A (OCI uses `time_rule_locked` instead — see note) |
-| Versioning + retention     | Both allowed together in AWS          | Mutually exclusive in OCI — a `check` block guards against this at plan time | N/A (OCI API constraint) |
-| Locked rule timestamp      | —                                    | `time_rule_locked` (RFC3339)              | OCI-only                     |
-| Legal hold (indefinite)    | per-object legal hold (separate API) | —                                         | N/A (OCI retention rules always require a duration — the API rejects rules without one) |
-| Token                      | `object_lock_configuration.token`    | —                                         | N/A                          |
+| Object Lock (WORM)         | `object_lock_enabled` + `object_lock_configuration` | `retention_rules` (inline)         | mapped                            |
+| Retention duration         | `default_retention.days` / `.years`  | `duration.time_amount` + `time_unit`      | mapped                            |
+| Retention mode             | `default_retention.mode` (GOVERNANCE / COMPLIANCE) | - | N/A (OCI uses `time_rule_locked` instead - see note) |
+| Versioning + retention     | Both allowed together in AWS          | Mutually exclusive in OCI - a `check` block guards against this at plan time | N/A (OCI API constraint) |
+| Locked rule timestamp      | - | `time_rule_locked` (RFC3339)              | OCI-only                     |
+| Legal hold (indefinite)    | per-object legal hold (separate API) | - | N/A (OCI retention rules always require a duration - the API rejects rules without one) |
+| Token                      | `object_lock_configuration.token`    | - | n/a                          |
 
 > **GOVERNANCE vs COMPLIANCE vs OCI locked-rule**: AWS distinguishes GOVERNANCE (privileged
 > override) from COMPLIANCE (no override). OCI achieves the COMPLIANCE-style guarantee by setting
-> `time_rule_locked` to a past or near-future RFC3339 timestamp — once that time passes the rule
+> `time_rule_locked` to a past or near-future RFC3339 timestamp - once that time passes the rule
 > can no longer be modified or deleted. Without `time_rule_locked` the rule behaves like
 > GOVERNANCE (admins can edit it).
 
@@ -136,15 +129,15 @@ while being idiomatic OCI.
 
 | Feature                       | AWS                                               | OCI                                                   | Status |
 | ----------------------------- | ------------------------------------------------- | ----------------------------------------------------- | ------ |
-| Cross-region replication      | `replication_configuration` → `aws_s3_bucket_replication_configuration` | `replication_policy` → `oci_objectstorage_replication_policy` | ✅ (single rule per policy in OCI) |
-| Destination bucket / region   | `destination.bucket`, AWS region in ARN           | `destination_bucket_name` + `destination_region_name` | ✅      |
-| Source versioning requirement | required                                          | required                                              | ✅ (both — must set `versioning = "Enabled"`) |
-| Per-rule filter / priority    | `rule.filter`, `rule.priority`                    | —                                                     | N/A (OCI replication is bucket-wide) |
-| Cross-account / role          | `role`, `destination.account`, `destination.access_control_translation` | —                            | N/A (OCI uses IAM policy + namespace-level grants) |
-| Delete marker replication     | `delete_marker_replication`                       | —                                                     | N/A    |
-| Existing-object replication   | `existing_object_replication`                     | —                                                     | N/A    |
-| Replication time / metrics    | `replication_time`, `metrics`                     | —                                                     | N/A    |
-| Replica KMS / SSE selection   | `destination.encryption_configuration`, `source_selection_criteria.sse_kms_encrypted_objects` | — | N/A |
+| Cross-region replication      | `replication_configuration` → `aws_s3_bucket_replication_configuration` | `replication_policy` → `oci_objectstorage_replication_policy` | mapped (single rule per policy in OCI) |
+| Destination bucket / region   | `destination.bucket`, AWS region in ARN           | `destination_bucket_name` + `destination_region_name` | mapped      |
+| Source versioning requirement | required                                          | required                                              | mapped (both - must set `versioning = "Enabled"`) |
+| Per-rule filter / priority    | `rule.filter`, `rule.priority`                    | - | N/A (OCI replication is bucket-wide) |
+| Cross-account / role          | `role`, `destination.account`, `destination.access_control_translation` | - | N/A (OCI uses IAM policy + namespace-level grants) |
+| Delete marker replication     | `delete_marker_replication`                       | - | n/a    |
+| Existing-object replication   | `existing_object_replication`                     | - | n/a    |
+| Replication time / metrics    | `replication_time`, `metrics`                     | - | n/a    |
+| Replica KMS / SSE selection   | `destination.encryption_configuration`, `source_selection_criteria.sse_kms_encrypted_objects` | - | n/a |
 
 ---
 
@@ -152,13 +145,13 @@ while being idiomatic OCI.
 
 | Feature                | AWS                                          | OCI                                  | Status   |
 | ---------------------- | -------------------------------------------- | ------------------------------------ | -------- |
-| Time-limited access URL | Presigned URLs (per-call SDK API; not in TF) | `preauthenticated_requests` → `oci_objectstorage_preauthrequest` | OCI-only ✅ |
-| Multiple PARs per bucket | —                                          | `for_each` map                       | ✅        |
-| Bucket-level vs object-level scope | —                                  | `object_name` null vs set            | ✅        |
-| Bucket listing toggle  | —                                            | `bucket_listing_action`              | ✅        |
+| Time-limited access URL | Presigned URLs (per-call SDK API; not in TF) | `preauthenticated_requests` → `oci_objectstorage_preauthrequest` | OCI-only |
+| Multiple PARs per bucket | - | `for_each` map                       | mapped        |
+| Bucket-level vs object-level scope | - | `object_name` null vs set            | mapped        |
+| Bucket listing toggle  | - | `bucket_listing_action`              | mapped        |
 
 > **Why this is OCI-only**: AWS presigned URLs are minted by the SDK at request time using
-> session credentials — they are not Terraform resources. OCI PARs are first-class server-side
+> session credentials - they are not Terraform resources. OCI PARs are first-class server-side
 > objects with their own lifecycle, so they belong in the module.
 
 ---
@@ -167,8 +160,8 @@ while being idiomatic OCI.
 
 | Feature                | AWS                                                                              | OCI                                  | Status        |
 | ---------------------- | -------------------------------------------------------------------------------- | ------------------------------------ | ------------- |
-| Emit events on object changes | `aws_s3_bucket_notification` per destination (Lambda, SQS, SNS, EventBridge) | `object_events_enabled` (bool)       | ✅ (partial — see note) |
-| Event filters / destinations | per-destination filter (prefix/suffix), explicit target ARNs               | —                                    | N/A (configured via OCI Events Service rules — out of scope) |
+| Emit events on object changes | `aws_s3_bucket_notification` per destination (Lambda, SQS, SNS, EventBridge) | `object_events_enabled` (bool)       | mapped (partial - see note) |
+| Event filters / destinations | per-destination filter (prefix/suffix), explicit target ARNs               | - | N/A (configured via OCI Events Service rules - out of scope) |
 
 > **Scope**: This module only toggles whether the bucket emits events to the OCI Events Service.
 > Building event rules that route to OCI Functions / Streams / Notifications belongs to a
@@ -180,11 +173,11 @@ while being idiomatic OCI.
 
 | Feature                       | AWS                                                                      | OCI | Status |
 | ----------------------------- | ------------------------------------------------------------------------ | --- | ------ |
-| Server access logging         | `logging`, `aws_s3_bucket_logging`                                       | —   | N/A (OCI captures bucket activity in audit + service logs, not per-bucket) |
-| CloudWatch metrics            | `aws_s3_bucket_metric`                                                   | —   | N/A (OCI bucket metrics live in OCI Monitoring service)        |
-| S3 Inventory                  | `inventory_configuration`, `attach_inventory_destination_policy`         | —   | N/A    |
-| S3 Storage Class Analysis     | `analytics_configuration`, `attach_analytics_destination_policy`         | —   | N/A    |
-| Storage Lens                  | —                                                                        | —   | N/A    |
+| Server access logging         | `logging`, `aws_s3_bucket_logging`                                       | - | N/A (OCI captures bucket activity in audit + service logs, not per-bucket) |
+| CloudWatch metrics            | `aws_s3_bucket_metric`                                                   | - | N/A (OCI bucket metrics live in OCI Monitoring service)        |
+| S3 Inventory                  | `inventory_configuration`, `attach_inventory_destination_policy`         | - | n/a    |
+| S3 Storage Class Analysis     | `analytics_configuration`, `attach_analytics_destination_policy`         | - | n/a    |
+| Storage Lens                  | - | - | n/a    |
 
 ---
 
@@ -192,10 +185,10 @@ while being idiomatic OCI.
 
 | Feature              | AWS                                            | OCI | Status |
 | -------------------- | ---------------------------------------------- | --- | ------ |
-| Transfer Acceleration | `acceleration_status`                         | —   | N/A (no acceleration tier in OCI) |
-| Request Payer        | `request_payer`                                | —   | N/A    |
-| CORS                 | `cors_rule`, `aws_s3_bucket_cors_configuration` | —  | N/A (OCI Object Storage does not expose per-bucket CORS rules) |
-| Website hosting      | `website`, `aws_s3_bucket_website_configuration` | — | N/A (OCI requires API Gateway + Object Storage as a workaround) |
+| Transfer Acceleration | `acceleration_status`                         | - | N/A (no acceleration tier in OCI) |
+| Request Payer        | `request_payer`                                | - | n/a    |
+| CORS                 | `cors_rule`, `aws_s3_bucket_cors_configuration` | - | N/A (OCI Object Storage does not expose per-bucket CORS rules) |
+| Website hosting      | `website`, `aws_s3_bucket_website_configuration` | - | N/A (OCI requires API Gateway + Object Storage as a workaround) |
 
 ---
 
@@ -203,8 +196,8 @@ while being idiomatic OCI.
 
 | Feature                       | AWS                       | OCI | Status |
 | ----------------------------- | ------------------------- | --- | ------ |
-| S3 Express One Zone           | `is_directory_bucket`, `aws_s3_directory_bucket` | — | N/A (no single-AZ low-latency tier in OCI Object Storage) |
-| S3 Tables (Iceberg)           | `metadata_configuration`, `aws_s3_bucket_metadata_configuration` | — | N/A (OCI Object Storage is object-only) |
+| S3 Express One Zone           | `is_directory_bucket`, `aws_s3_directory_bucket` | - | N/A (no single-AZ low-latency tier in OCI Object Storage) |
+| S3 Tables (Iceberg)           | `metadata_configuration`, `aws_s3_bucket_metadata_configuration` | - | N/A (OCI Object Storage is object-only) |
 
 ---
 
@@ -212,13 +205,13 @@ while being idiomatic OCI.
 
 | Feature                         | AWS                                          | OCI | Status |
 | ------------------------------- | -------------------------------------------- | --- | ------ |
-| Resource-based policy           | `policy`, `aws_s3_bucket_policy`             | —   | N/A (OCI uses tenancy-level `oci_identity_policy` statements managed outside this module — see note below) |
-| Pre-built ELB / ALB / NLB log delivery | `attach_elb_log_delivery_policy`, `attach_lb_log_delivery_policy` | — | N/A    |
-| Pre-built access-log delivery   | `attach_access_log_delivery_policy`          | —   | N/A    |
-| Pre-built CloudTrail / WAF policies | `attach_cloudtrail_log_delivery_policy`, `attach_waf_log_delivery_policy` | — | N/A |
-| Pre-built TLS / insecure-transport policies | `attach_require_latest_tls_policy`, `attach_deny_insecure_transport_policy` | — | N/A (OCI Object Storage enforces TLS at the service edge) |
-| Pre-built encryption-enforcement policies | `attach_deny_unencrypted_object_uploads`, `attach_deny_incorrect_encryption_headers`, `attach_deny_ssec_encrypted_object_uploads`, `attach_deny_incorrect_kms_key_sse` | — | N/A (OCI buckets are encrypted by default) |
-| Inventory / analytics destination policies | `attach_inventory_destination_policy`, `attach_analytics_destination_policy` | — | N/A |
+| Resource-based policy           | `policy`, `aws_s3_bucket_policy`             | - | N/A (OCI uses tenancy-level `oci_identity_policy` statements managed outside this module - see note below) |
+| Pre-built ELB / ALB / NLB log delivery | `attach_elb_log_delivery_policy`, `attach_lb_log_delivery_policy` | - | n/a    |
+| Pre-built access-log delivery   | `attach_access_log_delivery_policy`          | - | n/a    |
+| Pre-built CloudTrail / WAF policies | `attach_cloudtrail_log_delivery_policy`, `attach_waf_log_delivery_policy` | - | n/a |
+| Pre-built TLS / insecure-transport policies | `attach_require_latest_tls_policy`, `attach_deny_insecure_transport_policy` | - | N/A (OCI Object Storage enforces TLS at the service edge) |
+| Pre-built encryption-enforcement policies | `attach_deny_unencrypted_object_uploads`, `attach_deny_incorrect_encryption_headers`, `attach_deny_ssec_encrypted_object_uploads`, `attach_deny_incorrect_kms_key_sse` | - | N/A (OCI buckets are encrypted by default) |
+| Inventory / analytics destination policies | `attach_inventory_destination_policy`, `attach_analytics_destination_policy` | - | n/a |
 
 > **Why all `attach_*_policy` rows are N/A**: AWS S3 bucket policies are inline JSON attached
 > directly to the bucket. OCI grants access through tenancy-level `oci_identity_policy`
@@ -232,9 +225,9 @@ while being idiomatic OCI.
 
 | Feature           | AWS    | OCI                  | Status |
 | ----------------- | ------ | -------------------- | ------ |
-| Freeform tags     | `tags` | `tags`               | ✅ Identical |
-| Defined tags      | —      | `defined_tags`       | OCI-only |
-| Bucket-only tags  | —      | `bucket_tags` / `bucket_defined_tags` | OCI-only (per-resource merge layer) |
+| Freeform tags     | `tags` | `tags`               | mapped |
+| Defined tags      | - | `defined_tags`       | OCI-only |
+| Bucket-only tags  | - | `bucket_tags` / `bucket_defined_tags` | OCI-only (per-resource merge layer) |
 
 | Variable       | OCI tag type    |
 | -------------- | --------------- |
@@ -247,30 +240,29 @@ while being idiomatic OCI.
 
 | Wrapper             | AWS         | OCI         | Status |
 | ------------------- | ----------- | ----------- | ------ |
-| Root module wrapper | `wrappers/` | `wrappers/` | ✅      |
-| Object submodule wrapper | `wrappers/object/` | — | N/A (no objects submodule in this OCI module — out of scope) |
-| Notification submodule wrapper | `wrappers/notification/` | — | N/A (OCI Events Service rules are out of scope) |
-| Table-bucket submodule wrapper | `wrappers/table-bucket/` | — | N/A (S3 Tables has no OCI equivalent) |
+| Root module wrapper | `wrappers/` | `wrappers/` | mapped      |
+| Object submodule wrapper | `wrappers/object/` | - | N/A (no objects submodule in this OCI module - out of scope) |
+| Notification submodule wrapper | `wrappers/notification/` | - | N/A (OCI Events Service rules are out of scope) |
+| Table-bucket submodule wrapper | `wrappers/table-bucket/` | - | N/A (S3 Tables has no OCI equivalent) |
 
 ---
 
-## Variables — Matched
+## Variables - Matched
 
 | AWS                                              | OCI                          | Notes                                          |
 | ------------------------------------------------ | ---------------------------- | ---------------------------------------------- |
-| `create_bucket`                                  | `create`                     | Master toggle                                  |
 | `bucket`                                         | `bucket`                     | Bucket name                                    |
 | `versioning.status`                              | `versioning`                 | String instead of map                          |
 | `server_side_encryption_configuration.kms_master_key_id` | `kms_key_id`         | SSE-KMS key                                    |
 | `intelligent_tiering`                            | `auto_tiering`               | Bucket-wide switch                             |
 | `object_lock_configuration.rule.default_retention` | `retention_rules`          | List of inline retention rules                 |
-| `lifecycle_rule`                                 | `lifecycle_rules`            | Separate policy resource                       |
+| `lifecycle_rule`                                 | `lifecycle_rule`            | Separate policy resource                       |
 | `replication_configuration`                      | `replication_policy`         | Single rule, cross-region                      |
 | `tags`                                           | `tags`                       | Identical                                      |
 
 ---
 
-## Variables — AWS only (no OCI equivalent)
+## Variables - AWS only (no OCI equivalent)
 
 | AWS Variable                                                                                                                                                                                                                                                | Reason not in OCI |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
@@ -279,12 +271,12 @@ while being idiomatic OCI.
 | `is_directory_bucket`, `data_redundancy`, `type`, `availability_zone_id`, `location_type`                                                                                                                                                                 | No S3 Express equivalent in OCI                              |
 | `acl`, `grant`, `owner`, `control_object_ownership`, `object_ownership`                                                                                                                                                                                   | No ACLs in OCI                                               |
 | `attach_public_policy`, `block_public_acls`, `block_public_policy`, `ignore_public_acls`, `restrict_public_buckets`, `skip_destroy_public_access_block`                                                                                                   | Single `access_type` covers this in OCI                      |
-| `attach_policy`, `policy`, `attach_elb_log_delivery_policy`, `attach_lb_log_delivery_policy`, `attach_access_log_delivery_policy`, `attach_cloudtrail_log_delivery_policy`, `attach_waf_log_delivery_policy`, `attach_require_latest_tls_policy`, `attach_deny_insecure_transport_policy`, `attach_deny_unencrypted_object_uploads`, `attach_deny_ssec_encrypted_object_uploads`, `attach_deny_incorrect_encryption_headers`, `attach_deny_incorrect_kms_key_sse`, `attach_inventory_destination_policy`, `attach_analytics_destination_policy`, `allowed_kms_key_arn`, `access_log_delivery_policy_source_buckets`, `access_log_delivery_policy_source_accounts`, `access_log_delivery_policy_source_organizations`, `lb_log_delivery_policy_source_organizations` | All bucket-policy variants — OCI uses tenancy-level `oci_identity_policy` outside this module |
+| `attach_policy`, `policy`, `attach_elb_log_delivery_policy`, `attach_lb_log_delivery_policy`, `attach_access_log_delivery_policy`, `attach_cloudtrail_log_delivery_policy`, `attach_waf_log_delivery_policy`, `attach_require_latest_tls_policy`, `attach_deny_insecure_transport_policy`, `attach_deny_unencrypted_object_uploads`, `attach_deny_ssec_encrypted_object_uploads`, `attach_deny_incorrect_encryption_headers`, `attach_deny_incorrect_kms_key_sse`, `attach_inventory_destination_policy`, `attach_analytics_destination_policy`, `allowed_kms_key_arn`, `access_log_delivery_policy_source_buckets`, `access_log_delivery_policy_source_accounts`, `access_log_delivery_policy_source_organizations`, `lb_log_delivery_policy_source_organizations` | All bucket-policy variants - OCI uses tenancy-level `oci_identity_policy` outside this module |
 | `acceleration_status`, `request_payer`                                                                                                                                                                                                                    | No acceleration / requester-pays in OCI                      |
 | `cors_rule`                                                                                                                                                                                                                                               | OCI Object Storage has no per-bucket CORS                    |
 | `website`                                                                                                                                                                                                                                                 | No native static website hosting in OCI Object Storage       |
 | `logging`                                                                                                                                                                                                                                                 | OCI bucket logs flow through OCI audit + service logs        |
-| `metric_configuration`, `inventory_configuration`, `analytics_configuration`, `inventory_self_source_destination`, `inventory_source_account_id`, `inventory_source_bucket_arn`, `analytics_self_source_destination`, `analytics_source_account_id`, `analytics_source_bucket_arn` | All metrics / inventory / analytics — OCI surfaces these via OCI Monitoring service |
+| `metric_configuration`, `inventory_configuration`, `analytics_configuration`, `inventory_self_source_destination`, `inventory_source_account_id`, `inventory_source_bucket_arn`, `analytics_self_source_destination`, `analytics_source_account_id`, `analytics_source_bucket_arn` | All metrics / inventory / analytics - OCI surfaces these via OCI Monitoring service |
 | `transition_default_minimum_object_size`                                                                                                                                                                                                                  | OCI lifecycle has no equivalent flag                         |
 | `create_metadata_configuration`, `metadata_inventory_table_configuration_state`, `metadata_encryption_configuration`, `metadata_journal_table_record_expiration_days`, `metadata_journal_table_record_expiration`                                         | S3 Tables (Iceberg) has no OCI equivalent                    |
 | `object_lock_enabled`                                                                                                                                                                                                                                     | OCI retention rules are inline; no separate enable flag      |
@@ -293,7 +285,7 @@ while being idiomatic OCI.
 
 ---
 
-## Variables — OCI only (no AWS equivalent)
+## Variables - OCI only (no AWS equivalent)
 
 | OCI Variable               | What it does                                                                |
 | -------------------------- | --------------------------------------------------------------------------- |
@@ -309,29 +301,29 @@ while being idiomatic OCI.
 | `defined_tags`             | OCI tag namespace system                                                    |
 | `bucket_tags` / `bucket_defined_tags` | Per-resource tag merge layer                                     |
 
-### OCI-only — not yet implemented
+### OCI-only - not yet implemented
 
 | OCI Provider Attribute | What it does | Status |
 | ---------------------- | ------------ | ------ |
-| `oci_objectstorage_private_endpoint` | Private endpoint for VCN-restricted access to Object Storage (verify provider support at implementation time) | ⬜ deferred |
+| `oci_objectstorage_private_endpoint` | Private endpoint for VCN-restricted access to Object Storage (verify provider support at implementation time) | backlog deferred |
 
 ---
 
-## Outputs — Matched
+## Outputs - Matched
 
 | AWS                                            | OCI                       | Notes                                  |
 | ---------------------------------------------- | ------------------------- | -------------------------------------- |
 | `s3_bucket_id`                                 | `id`                      | Bucket name (resource ID in OCI)       |
 | `s3_bucket_arn`                                | `bucket_id`               | OCI uses an OCID instead of an ARN     |
-| `s3_bucket_region`                             | —                         | Region is provider-level in OCI        |
-| `s3_bucket_bucket_domain_name`                 | —                         | OCI buckets are addressed by namespace + name, not domain |
+| `s3_bucket_region`                             | - | Region is provider-level in OCI        |
+| `s3_bucket_bucket_domain_name`                 | - | OCI buckets are addressed by namespace + name, not domain |
 | `s3_bucket_lifecycle_configuration_rules`      | `lifecycle_policy_id`     | Policy ID only (rules are in state)    |
 | `aws_s3_bucket_versioning_status`              | `bucket_all_attributes.versioning` | Available via the all_attributes object |
-| `s3_bucket_tags`                               | `bucket_all_attributes.freeform_tags` | Same — via the all_attributes object |
+| `s3_bucket_tags`                               | `bucket_all_attributes.freeform_tags` | Same - via the all_attributes object |
 
 ---
 
-## Outputs — AWS only
+## Outputs - AWS only
 
 | AWS Output                                                                       | Reason not in OCI |
 | -------------------------------------------------------------------------------- | ----------------- |
@@ -341,11 +333,12 @@ while being idiomatic OCI.
 
 ---
 
-## Outputs — OCI only
+## Outputs - OCI only
 
 | OCI Output                       | What it exposes                                                  |
 | -------------------------------- | ---------------------------------------------------------------- |
 | `namespace`                      | The Object Storage namespace the bucket lives in                 |
+| `name`                           | The bucket name (same value as `id`, which mirrors `s3_bucket_id`) |
 | `bucket_id`                      | The bucket's OCID (separate from the resource ID, which is the name) |
 | `etag`                           | Bucket entity tag                                                |
 | `approximate_count`, `approximate_size` | Approximate object count and total size in bytes          |
@@ -382,7 +375,7 @@ while being idiomatic OCI.
 | `lifecycle`                 | ARCHIVE / INFREQUENT_ACCESS / DELETE / ABORT rules with prefix and glob filters                                      |
 | `replication`               | Cross-region replication. Uses a second `provider "oci"` alias for the destination region and creates the destination bucket first |
 | `preauthenticated-request`  | Bucket plus PARs (bucket-level read, object-level write), exports `access_uri`                                       |
-| `public-access`             | `access_type = "ObjectRead"` / `"ObjectReadWithoutList"` — the OCI analogue of AWS `account-public-access`           |
+| `public-access`             | `access_type = "ObjectRead"` / `"ObjectReadWithoutList"` - the OCI analogue of AWS `account-public-access`           |
 
 ### Example gap analysis
 
@@ -392,16 +385,16 @@ while being idiomatic OCI.
 | --------------------------------------- | --------------- | ---------------------------------------------------------------------- |
 | `notification`                          | Not implemented | OCI equivalent uses the Events Service + `oci_events_rule` (separate module / future) |
 | `object`                                | Not implemented | OCI `oci_objectstorage_object` is intentionally out of scope (no objects submodule) |
-| `s3-inventory`, `s3-analytics`          | N/A             | Surfaced via OCI Monitoring, not the bucket resource                   |
-| `directory-bucket`, `table-bucket`      | N/A             | No OCI equivalent                                                      |
+| `s3-inventory`, `s3-analytics`          | n/a             | Surfaced via OCI Monitoring, not the bucket resource                   |
+| `directory-bucket`, `table-bucket`      | n/a             | No OCI equivalent                                                      |
 
 #### AWS missing vs OCI
 
 | OCI Example / Scenario                | Notes                                                                |
 | ------------------------------------- | -------------------------------------------------------------------- |
-| `simple` — minimal standalone example | AWS `complete` is the starting point; no dedicated minimal example   |
-| `preauthenticated-request`            | No AWS Terraform analogue — presigned URLs are SDK-side               |
-| `public-access` — single-axis switch  | AWS spreads this across multiple block/ACL flags                     |
+| `simple` - minimal standalone example | AWS `complete` is the starting point; no dedicated minimal example   |
+| `preauthenticated-request`            | No AWS Terraform analogue - presigned URLs are SDK-side               |
+| `public-access` - single-axis switch  | AWS spreads this across multiple block/ACL flags                     |
 
 ---
 
@@ -423,15 +416,15 @@ defined-tag namespace system, compartment scoping.
 
 ### Implementation backlog
 
-#### AWS parity gaps — OCI provider supports these, module does not yet expose them
+#### AWS parity gaps - OCI provider supports these, module does not yet expose them
 
-_None — all OCI-mappable AWS features in scope are implemented._
+_None - all OCI-mappable AWS features in scope are implemented._
 
-#### OCI-native features — no AWS equivalent, not yet in the module
+#### OCI-native features - no AWS equivalent, not yet in the module
 
-- `oci_objectstorage_private_endpoint` — private VCN-restricted access (verify provider support)
+- `oci_objectstorage_private_endpoint` - private VCN-restricted access (verify provider support)
 
 #### Examples
 
-- `notification` / OCI Events Service rule example — once an `oci_events_rule` submodule exists
-- `multiple` / wrapper example — showcase `for_each` across buckets via `wrappers/`
+- `notification` / OCI Events Service rule example - once an `oci_events_rule` submodule exists
+- `multiple` / wrapper example - showcase `for_each` across buckets via `wrappers/`

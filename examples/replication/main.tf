@@ -18,7 +18,7 @@ locals {
 }
 
 ################################################################################
-# Destination bucket — must exist in a different region before the source
+# Destination bucket - must exist in a different region before the source
 # bucket's replication policy can reference it.
 ################################################################################
 

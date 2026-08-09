@@ -10,7 +10,7 @@ variable "kms_key_id" {
 }
 
 variable "defined_tags" {
-  description = "Optional defined tags (namespace.key = value). Empty by default — pre-existing tag namespaces are required in the tenancy"
+  description = "Optional defined tags (namespace.key = value). Empty by default - pre-existing tag namespaces are required in the tenancy"
   type        = map(string)
   default     = {}
 }
