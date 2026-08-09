@@ -14,7 +14,7 @@ locals {
 }
 
 ################################################################################
-# Object Storage Bucket — all OCI-mappable features turned on
+# Object Storage Bucket - all OCI-mappable features turned on
 ################################################################################
 
 module "bucket" {
@@ -37,7 +37,7 @@ module "bucket" {
     environment = "example"
   }
 
-  # Object Lock / WORM equivalent — duration is required by the OCI API.
+  # Object Lock / WORM equivalent - duration is required by the OCI API.
   retention_rules = [
     {
       display_name = "thirty-day-retention"
@@ -51,7 +51,7 @@ module "bucket" {
   # and is not included here. See examples/lifecycle for that scenario.
   # NOTE: cannot use action = "INFREQUENT_ACCESS" in a lifecycle rule when
   # auto_tiering = "InfrequentAccess" is already set on the bucket.
-  lifecycle_rules = [
+  lifecycle_rule = [
     {
       name        = "archive-after-60d"
       action      = "ARCHIVE"

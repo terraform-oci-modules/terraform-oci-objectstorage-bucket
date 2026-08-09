@@ -9,7 +9,7 @@ output "bucket_name" {
 }
 
 output "preauthenticated_request_uris" {
-  description = "Map of PAR name to access URI (sensitive — each URI grants access without further credentials)"
+  description = "Map of PAR name to access URI (sensitive - each URI grants access without further credentials)"
   value       = module.bucket.preauthenticated_request_uris
   sensitive   = true
 }

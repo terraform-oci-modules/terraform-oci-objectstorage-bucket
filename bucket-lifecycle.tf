@@ -6,17 +6,17 @@
 # block on the bucket.
 #
 # Constraint: target = "previous-object-versions" requires versioning to be
-# enabled on the bucket — the OCI API rejects it otherwise.
+# enabled on the bucket - the OCI API rejects it otherwise.
 ################################################################################
 
 resource "oci_objectstorage_object_lifecycle_policy" "this" {
-  count = local.create && length(var.lifecycle_rules) > 0 ? 1 : 0
+  count = local.create_bucket && length(var.lifecycle_rule) > 0 ? 1 : 0
 
   namespace = local.namespace
   bucket    = oci_objectstorage_bucket.this[0].name
 
   dynamic "rules" {
-    for_each = var.lifecycle_rules
+    for_each = var.lifecycle_rule
     content {
       name        = rules.value.name
       action      = rules.value.action

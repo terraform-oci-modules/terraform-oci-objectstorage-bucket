@@ -6,7 +6,7 @@
 ################################################################################
 
 resource "oci_objectstorage_preauthrequest" "this" {
-  for_each = local.create ? var.preauthenticated_requests : {}
+  for_each = local.create_bucket ? var.preauthenticated_requests : {}
 
   namespace             = local.namespace
   bucket                = oci_objectstorage_bucket.this[0].name

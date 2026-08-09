@@ -25,7 +25,7 @@ module "bucket" {
 
   versioning = "Enabled"
 
-  lifecycle_rules = [
+  lifecycle_rule = [
     # 1. Archive cold objects under "archive/" after 90 days.
     {
       name        = "archive-cold-data"

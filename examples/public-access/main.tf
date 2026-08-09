@@ -16,8 +16,8 @@ locals {
 ################################################################################
 # Two buckets demonstrating each anonymous-access level OCI exposes:
 #
-#  - ObjectRead              — anonymous GET + LIST (closest to a public website / asset bucket)
-#  - ObjectReadWithoutList   — anonymous GET, listing denied (asset bucket with no enumeration)
+# - ObjectRead - anonymous GET + LIST (closest to a public website / asset bucket)
+# - ObjectReadWithoutList - anonymous GET, listing denied (asset bucket with no enumeration)
 #
 # The "private" default (NoPublicAccess) is exercised by examples/simple.
 ################################################################################

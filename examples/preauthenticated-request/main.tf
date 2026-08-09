@@ -15,8 +15,8 @@ locals {
 
 ################################################################################
 # Bucket with two PARs:
-#  - bucket-level: anonymous read + list across the whole bucket
-#  - object-level: write to a single object key (upload-only handoff URL)
+# - bucket-level: anonymous read + list across the whole bucket
+# - object-level: write to a single object key (upload-only handoff URL)
 #
 # par_expiry is a plain RFC3339 string (default "2030-01-01T00:00:00Z") so the
 # example has no provider dependency beyond oci + random and plans are stable.
