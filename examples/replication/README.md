@@ -1,7 +1,7 @@
 # Replication — cross-region
 
 Creates a source bucket in `us-ashburn-1` and a destination bucket in
-`us-phoenix-1` (override via `TF_VAR_source_region` / `TF_VAR_destination_region`),
+`us-chicago-1` (override via `TF_VAR_source_region` / `TF_VAR_destination_region`),
 then attaches a replication policy on the source pointing at the destination.
 
 Two requirements OCI enforces:
