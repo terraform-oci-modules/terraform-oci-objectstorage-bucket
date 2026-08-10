@@ -21,6 +21,6 @@ run "creates_cross_region_replication" {
   # (e.g. same-region destination or destination versioning off).
   assert {
     condition     = output.replication_status != "CLIENT_ERROR"
-    error_message = "Replication policy reported a CLIENT_ERROR — check region and versioning"
+    error_message = "Replication policy reported a CLIENT_ERROR - check region and versioning"
   }
 }

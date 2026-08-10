@@ -1,4 +1,4 @@
-# Simple — minimal private bucket
+# Simple: minimal private bucket
 
 Creates a single private bucket (`access_type = "NoPublicAccess"`) with tags.
 

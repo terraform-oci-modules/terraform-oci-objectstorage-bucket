@@ -3,21 +3,21 @@ skip-check:
   #   semantic version constraints (version = "~> x.y"), not commit hashes. Local example refs
   #   (source = "../../") have no version concept at all.
   - CKV_TF_1
-  # CKV_OCI_7: Object events (object_events_enabled) are intentionally opt-in — defaulting to
+  # CKV_OCI_7: Object events (object_events_enabled) are intentionally opt-in - defaulting to
   #   true would emit events for every bucket ever created by this module and force all callers
   #   to have an OCI Events Service consumer wired up. Minimal examples (simple, replication,
   #   public-access) do not enable events by design; the complete example demonstrates the flag.
   #   Users should enable object_events_enabled = true in production when they have an Events
   #   rule consuming the events.
   - CKV_OCI_7
-  # CKV_OCI_8: Versioning is intentionally opt-in — a versioned bucket cannot be deleted while
+  # CKV_OCI_8: Versioning is intentionally opt-in - a versioned bucket cannot be deleted while
   #   it holds previous-version objects, which would make the terraform destroy in tests and
   #   short-lived environments painful. Versioning is enabled in examples that require it
   #   (lifecycle, replication). Users should set versioning = "Enabled" for production workloads
   #   where data recovery is important.
   - CKV_OCI_8
   # CKV_OCI_10: The public-access example deliberately creates ObjectRead and ObjectReadWithoutList
-  #   buckets to demonstrate OCI's anonymous access levels — that is the sole purpose of that
+  #   buckets to demonstrate OCI's anonymous access levels - that is the sole purpose of that
   #   example. The root module defaults to access_type = "NoPublicAccess" (private), so all other
   #   examples and any production deployment that does not explicitly override access_type will
   #   pass this check.

@@ -161,8 +161,11 @@ variable "lifecycle_rule" {
 variable "replication_policy" {
   description = <<-EOT
     Cross-region replication policy. Maps to the AWS replication_configuration.
-    The destination bucket must already exist in destination_region_name, and the
-    source bucket must have versioning = "Enabled".
+    The destination bucket must already exist in destination_region_name, the
+    source bucket must have versioning = "Enabled", and the destination bucket
+    must NOT have versioning enabled. OCI rejects a policy targeting a
+    versioning-enabled destination with a 403 that reads as an authorization
+    failure.
   EOT
   type = object({
     name                    = string

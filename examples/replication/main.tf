@@ -32,8 +32,10 @@ module "destination_bucket" {
   bucket         = "${local.name}-dst"
   compartment_id = var.compartment_id
 
-  versioning = "Enabled"
-  tags       = local.tags
+  # Versioning must stay disabled on the destination. OCI rejects a replication
+  # policy that targets a versioning-enabled bucket, with a 403 that says only
+  # "Failed to create replication policy".
+  tags = local.tags
 }
 
 ################################################################################

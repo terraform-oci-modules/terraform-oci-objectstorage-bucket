@@ -9,7 +9,7 @@ run "creates_preauthenticated_requests" {
     condition     = output.bucket_id != null
     error_message = "Bucket must be created"
   }
-  # access_uri is computed at apply time — that's why this test uses command = apply.
+  # access_uri is computed at apply time - that's why this test uses command = apply.
   assert {
     condition     = length(nonsensitive(output.preauthenticated_request_uris)) == 2
     error_message = "Both PARs (bucket-listing-read, upload-handoff) must be created"

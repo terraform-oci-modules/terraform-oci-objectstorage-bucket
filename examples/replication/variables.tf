@@ -12,5 +12,5 @@ variable "source_region" {
 variable "destination_region" {
   description = "Region for the destination bucket (must differ from source_region)"
   type        = string
-  default     = "us-phoenix-1"
+  default     = "us-chicago-1"
 }
