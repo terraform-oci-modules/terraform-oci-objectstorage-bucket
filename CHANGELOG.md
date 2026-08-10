@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/compare/v0.2.0...v0.2.1) (2026-08-10)
+
+### Bug Fixes
+
+* Enable the replication test ([#2](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/issues/2)) ([d1edc67](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/commit/d1edc67a9368762eb3c6a2581d62dc1e9dd751e0))
+
 ## [0.2.0](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/compare/v0.1.0...v0.2.0) (2026-08-09)
 
 ### Features
