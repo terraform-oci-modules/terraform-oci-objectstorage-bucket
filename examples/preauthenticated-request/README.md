@@ -1,6 +1,6 @@
 # Pre-Authenticated Requests (PARs)
 
-A bucket with two pre-authenticated requests — the OCI equivalent of S3
+A bucket with two pre-authenticated requests - the OCI equivalent of S3
 presigned URLs, but as first-class server-side resources (so they belong in
 Terraform, not the SDK):
 

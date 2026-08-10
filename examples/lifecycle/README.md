@@ -1,4 +1,4 @@
-# Lifecycle — all four actions + object name filters
+# Lifecycle: all four actions + object name filters
 
 Bucket with a lifecycle policy that exercises every supported OCI action:
 
