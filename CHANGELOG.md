@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/compare/v0.2.1...v0.2.2) (2026-08-16)
+
+### Bug Fixes
+
+* Bump required_version to 1.7, add free mock_provider unit tests ([d352d7d](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/commit/d352d7d97116136404695b425b849847453b255c))
+
 ## [0.2.1](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/compare/v0.2.0...v0.2.1) (2026-08-10)
 
 ### Bug Fixes
