@@ -68,7 +68,8 @@ variable "versioning" {
   description = <<-EOT
     Object versioning state. Maps to the AWS versioning configuration.
     "Disabled" (default), "Enabled", or "Suspended". Note OCI uses a single string
-    rather than the AWS map shape. Required to be "Enabled" when using replication.
+    rather than the AWS map shape. Not required for replication: OCI replicates
+    the latest version of each object either way.
   EOT
   type        = string
   default     = "Disabled"
@@ -161,9 +162,8 @@ variable "lifecycle_rule" {
 variable "replication_policy" {
   description = <<-EOT
     Cross-region replication policy. Maps to the AWS replication_configuration.
-    The destination bucket must already exist in destination_region_name, the
-    source bucket must have versioning = "Enabled", and the destination bucket
-    must NOT have versioning enabled. OCI rejects a policy targeting a
+    The destination bucket must already exist in destination_region_name and
+    must NOT have versioning enabled (the source bucket may have it either way). OCI rejects a policy targeting a
     versioning-enabled destination with a 403 that reads as an authorization
     failure.
   EOT

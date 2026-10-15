@@ -112,7 +112,7 @@ anything the OCI provider supports that this module does not expose yet.
 | Object Lock (WORM)         | `object_lock_enabled` + `object_lock_configuration` | `retention_rules` (inline)         | mapped                            |
 | Retention duration         | `default_retention.days` / `.years`  | `duration.time_amount` + `time_unit`      | mapped                            |
 | Retention mode             | `default_retention.mode` (GOVERNANCE / COMPLIANCE) | - | N/A (OCI uses `time_rule_locked` instead - see note) |
-| Versioning + retention     | Both allowed together in AWS          | Mutually exclusive in OCI - a `check` block guards against this at plan time | N/A (OCI API constraint) |
+| Versioning + retention     | Both allowed together in AWS          | Mutually exclusive in OCI - a precondition fails the plan | N/A (OCI API constraint) |
 | Locked rule timestamp      | - | `time_rule_locked` (RFC3339)              | OCI-only                     |
 | Legal hold (indefinite)    | per-object legal hold (separate API) | - | N/A (OCI retention rules always require a duration - the API rejects rules without one) |
 | Token                      | `object_lock_configuration.token`    | - | n/a                          |
@@ -131,7 +131,7 @@ anything the OCI provider supports that this module does not expose yet.
 | ----------------------------- | ------------------------------------------------- | ----------------------------------------------------- | ------ |
 | Cross-region replication      | `replication_configuration` → `aws_s3_bucket_replication_configuration` | `replication_policy` → `oci_objectstorage_replication_policy` | mapped (single rule per policy in OCI) |
 | Destination bucket / region   | `destination.bucket`, AWS region in ARN           | `destination_bucket_name` + `destination_region_name` | mapped      |
-| Source versioning requirement | required                                          | required                                              | mapped (both - must set `versioning = "Enabled"`) |
+| Source versioning requirement | required                                          | not required (destination must not be versioned)      | different (OCI replicates only the latest version) |
 | Per-rule filter / priority    | `rule.filter`, `rule.priority`                    | - | N/A (OCI replication is bucket-wide) |
 | Cross-account / role          | `role`, `destination.account`, `destination.access_control_translation` | - | N/A (OCI uses IAM policy + namespace-level grants) |
 | Delete marker replication     | `delete_marker_replication`                       | - | n/a    |

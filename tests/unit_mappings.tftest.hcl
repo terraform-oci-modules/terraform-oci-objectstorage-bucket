@@ -96,15 +96,10 @@ run "retention_rule_duration_mapping" {
   }
 }
 
-# --- Plan-time guards (check blocks) ------------------------------------------
+# --- Plan-time guards (resource preconditions) ---------------------------------
 #
-# check.<name>.status is only referenceable from a run block's own
-# expect_failures attribute, not from a plain assert condition - that's the
-# framework's intended mechanism for testing that a check block fires. The
-# "stays quiet when there is no conflict" direction needs no dedicated test:
-# every other run above already plans successfully with both check blocks in
-# scope, so an unexpected false-positive there would already show up as a
-# failure on those runs.
+# These fail the plan rather than warn, so expect_failures names the resource
+# that carries the precondition.
 
 run "auto_tiering_lifecycle_conflict_is_flagged" {
   command = plan
@@ -120,7 +115,7 @@ run "auto_tiering_lifecycle_conflict_is_flagged" {
     ]
   }
 
-  expect_failures = [check.auto_tiering_ia_lifecycle_conflict]
+  expect_failures = [oci_objectstorage_bucket.this]
 }
 
 run "retention_rules_versioning_conflict_is_flagged" {
@@ -137,5 +132,41 @@ run "retention_rules_versioning_conflict_is_flagged" {
     ]
   }
 
-  expect_failures = [check.retention_rules_versioning_conflict]
+  expect_failures = [oci_objectstorage_bucket.this]
+}
+
+run "replication_plans_without_source_versioning" {
+  command = plan
+
+  # Unlike S3, OCI does not require versioning on the replication source.
+  variables {
+    replication_policy = {
+      name                    = "to-phx"
+      destination_region_name = "us-phoenix-1"
+      destination_bucket_name = "dest"
+    }
+  }
+
+  assert {
+    condition     = oci_objectstorage_replication_policy.this[0].destination_bucket_name == "dest"
+    error_message = "An unversioned source bucket must accept a replication policy"
+  }
+}
+
+run "replication_with_versioning_plans" {
+  command = plan
+
+  variables {
+    versioning = "Enabled"
+    replication_policy = {
+      name                    = "to-phx"
+      destination_region_name = "us-phoenix-1"
+      destination_bucket_name = "dest"
+    }
+  }
+
+  assert {
+    condition     = oci_objectstorage_replication_policy.this[0].destination_region_name == "us-phoenix-1"
+    error_message = "A versioned bucket must accept a replication policy"
+  }
 }

@@ -15,7 +15,7 @@ The test suite lives in `tests/` - one `.tftest.hcl` file per example. All tests
 
 `tests/unit_mappings.tftest.hcl` exercises input->config mapping logic
 (namespace auto-resolution, tag merge order, retention rule mapping, and the
-plan-time guard `check` blocks) against a mocked OCI provider - no real
+plan-time guard preconditions) against a mocked OCI provider - no real
 resources, no OCI credentials, safe to run anytime:
 
 ```bash

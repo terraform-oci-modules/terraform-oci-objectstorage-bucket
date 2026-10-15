@@ -22,26 +22,6 @@ data "oci_objectstorage_namespace" "this" {
 }
 
 ################################################################################
-# Guards - some OCI Object Storage argument combinations are rejected by the API
-# at apply time with cryptic 400 errors. Catch them at plan time instead so the
-# message is actionable.
-################################################################################
-
-check "auto_tiering_ia_lifecycle_conflict" {
-  assert {
-    condition     = !(var.auto_tiering == "InfrequentAccess" && anytrue([for r in var.lifecycle_rule : r.action == "INFREQUENT_ACCESS"]))
-    error_message = "When auto_tiering = \"InfrequentAccess\", lifecycle rules with action = \"INFREQUENT_ACCESS\" are rejected by the OCI API. Remove the INFREQUENT_ACCESS lifecycle rule."
-  }
-}
-
-check "retention_rules_versioning_conflict" {
-  assert {
-    condition     = !(length(var.retention_rules) > 0 && var.versioning != "Disabled")
-    error_message = "OCI does not allow retention_rules on a versioning-enabled bucket. Set versioning = \"Disabled\" (default) when using retention_rules."
-  }
-}
-
-################################################################################
 # Bucket
 ################################################################################
 
@@ -81,5 +61,16 @@ resource "oci_objectstorage_bucket" "this" {
 
   lifecycle {
     ignore_changes = [defined_tags, freeform_tags]
+
+    # Some argument combinations are rejected by the OCI API at apply time with
+    # cryptic 400 errors. Fail the plan instead so the message is actionable.
+    precondition {
+      condition     = !(var.auto_tiering == "InfrequentAccess" && anytrue([for r in var.lifecycle_rule : r.action == "INFREQUENT_ACCESS"]))
+      error_message = "When auto_tiering = \"InfrequentAccess\", lifecycle rules with action = \"INFREQUENT_ACCESS\" are rejected by the OCI API. Remove the INFREQUENT_ACCESS lifecycle rule."
+    }
+    precondition {
+      condition     = !(length(var.retention_rules) > 0 && var.versioning != "Disabled")
+      error_message = "OCI does not allow retention_rules on a versioning-enabled bucket. Set versioning = \"Disabled\" (default) when using retention_rules."
+    }
   }
 }
