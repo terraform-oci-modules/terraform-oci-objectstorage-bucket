@@ -7,8 +7,10 @@ then attaches a replication policy on the source pointing at the destination.
 Two requirements OCI enforces:
 - The destination bucket must already exist in the destination region - handled
   by Terraform's dependency ordering between the two module calls.
-- The source bucket must have `versioning = "Enabled"`. Same applies to the
-  destination if you want versioned replicas (set here).
+- The destination bucket must not have versioning enabled. OCI rejects the
+  policy with a 403 that reads as an authorization failure. Versioning on the
+  source is optional (enabled here); OCI replicates only the latest version of
+  each object.
 
 ## Usage
 

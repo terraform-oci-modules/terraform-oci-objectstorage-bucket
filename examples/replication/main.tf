@@ -40,7 +40,8 @@ module "destination_bucket" {
 
 ################################################################################
 # Source bucket with a replication policy pointing at the destination bucket.
-# Versioning must be Enabled on the source.
+# Versioning on the source is optional; OCI replicates only the latest version
+# of each object.
 ################################################################################
 
 module "source_bucket" {

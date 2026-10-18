@@ -2,8 +2,8 @@
 # Replication Policy
 #
 # Maps to the AWS S3 replication_configuration. The destination bucket must
-# already exist in the destination region, and the source bucket must have
-# versioning enabled.
+# already exist in the destination region and must not have versioning enabled.
+# Unlike S3, OCI does not require versioning on the source bucket.
 ################################################################################
 
 resource "oci_objectstorage_replication_policy" "this" {
