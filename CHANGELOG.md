@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.3](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/compare/v0.2.2...v0.2.3) (2026-10-18)
+
+### Bug Fixes
+
+* Fail the plan on bucket argument conflicts instead of warning ([e2acd84](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/commit/e2acd844c7639fe781a86eec1dffc856a10e6109))
+
 ## [0.2.2](https://github.com/terraform-oci-modules/terraform-oci-objectstorage-bucket/compare/v0.2.1...v0.2.2) (2026-08-16)
 
 ### Bug Fixes
